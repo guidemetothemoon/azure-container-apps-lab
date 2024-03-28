@@ -1,0 +1,19 @@
+using ../main.bicep
+
+param environment = 'dev'
+param location = 'northeurope'
+param locationPrefix = 'neu'
+
+param tags object = {
+  application: 'aca-store'
+  environment: environment
+}
+
+param vnetIpRange = '10.0.0.0/21'
+
+param subnets = [
+  {
+    name: 'snet-aca-${environment}'
+    subnetPrefix: '10.0.0.0/23'
+  }
+]
