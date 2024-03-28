@@ -37,8 +37,8 @@ resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-11-02-
   tags: tags
 }
 
-resource mongoDbStorageMount 'Microsoft.App/managedEnvironments/storages@2023-05-01' = {
-  name: 'mongodbstorage'
+resource rabbitmqStorageMount 'Microsoft.App/managedEnvironments/storages@2023-05-01' = {
+  name: 'rabbitmqstorage'
   parent: containerAppsEnvironment
   properties: {
     azureFile: {
@@ -67,4 +67,4 @@ resource containerAppsInboundNsgRule 'Microsoft.Network/networkSecurityGroups/se
 */
 output defaultDomain string = containerAppsEnvironment.properties.defaultDomain
 output environmentId string = containerAppsEnvironment.id
-output mongoDbStorageName string = mongoDbStorageMount.name
+output rabbitmqStorageName string = rabbitmqStorageMount.name

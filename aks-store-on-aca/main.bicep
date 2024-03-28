@@ -74,7 +74,7 @@ module storage 'modules/storage.bicep' = {
   params: {    
     dnsZoneId: vnet.outputs.dnsZoneFileId
     dnsZoneName: 'file'
-    fileShareName: 'mongodb-data'
+    fileShareName: 'rabbitmq-data'
     keyVaultName: keyvault.outputs.keyVaultName
     location: location
     logAnalyticsWorkspaceId: common.outputs.logAnalyticsWorkspaceId
@@ -100,6 +100,21 @@ module acacommon 'modules/aca-common.bicep' = {
   dependsOn: [common, storage, vnet]
 }
 
+module backend 'modules/aca-internal-apps.bicep' = {
+  name: 'backend'
+  scope: resourceGroup()
+  params: {
+    location: location    
+    environmentId: acacommon.outputs.environmentId
+    managedIdentityId: keyvault.outputs.managedIdentityId
+    rabbitmqStorageName: acacommon.outputs.rabbitmqStorageName
+    openAIApiEndpointKeyUri: ai.outputs.openAIEndpoint
+    subnetIpRange: vnet.outputs.acaSubnetIpRange
+    tags: tags
+  }
+  dependsOn: [acacommon, keyvault, storage]
+}
+
 module frontend 'modules/aca-public-apps.bicep' = {
   name: 'frontend'
   scope: resourceGroup()
@@ -107,25 +122,13 @@ module frontend 'modules/aca-public-apps.bicep' = {
     //defaultDomain: acacommon.outputs.defaultDomain
     environmentId: acacommon.outputs.environmentId
     location: location
+    makelineServiceUri: backend.outputs.makelineServiceUri
     managedIdentityId: keyvault.outputs.managedIdentityId
-    openAIApiEndpointKeyUri: ai.outputs.openAIEndpoint
-    openAIApiKeyUri: ai.outputs.openAIKey
+    orderServiceUri: backend.outputs.orderServiceUri
+    productServiceUri: backend.outputs.productServiceUri
     tags: tags
   }
   dependsOn: [acacommon, keyvault, backend]
-}
-
-module backend 'modules/aca-internal-apps.bicep' = {
-  name: 'backend'
-  scope: resourceGroup()
-  params: {
-    location: location    
-    environmentId: acacommon.outputs.environmentId
-    mongoDbStorageName: acacommon.outputs.mongoDbStorageName
-    subnetIpRange: vnet.outputs.acaSubnetIpRange
-    tags: tags
-  }
-  dependsOn: [acacommon,keyvault,storage]
 }
 
 //@description('This is the frontend URL for your application')

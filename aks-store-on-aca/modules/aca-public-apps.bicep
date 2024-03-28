@@ -1,13 +1,13 @@
 param environmentId string
-param managedIdentityId string
-param openAIApiEndpointKeyUri string
-param openAIApiKeyUri string
 param location string
+param makelineServiceUri string
+param managedIdentityId string
+param orderServiceUri string
+param productServiceUri string
 param tags object
 
-
-resource container1 'Microsoft.App/containerApps@2023-05-01' = {
-  name: 'aca1'
+resource storefront 'Microsoft.App/containerApps@2023-05-01' = {
+  name: 'store-front'
   location: location
   identity: {
     type: 'UserAssigned'
@@ -18,15 +18,10 @@ resource container1 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: environmentId
     configuration: {
-      secrets: [
-        {
-          name: ''
-          value: ''
-        }
-      ]
       ingress: { 
         external: true
-        targetPort: 80
+        exposedPort: 80
+        targetPort: 8080
         transport: 'http'
         clientCertificateMode: 'accept'
       }
@@ -34,83 +29,65 @@ resource container1 'Microsoft.App/containerApps@2023-05-01' = {
     template: {
       containers: [
         {
-          image: ''
-          volumeMounts: [
-            {
-              mountPath: ''
-              volumeName: ''
-            }
-          ]
-          name: ''
+          image: 'ghcr.io/azure-samples/aks-store-demo/store-front:latest'
+          name: 'store-front'
           resources: {
             cpu: json('1.0')
             memory: '2.0Gi'
           }
           env: [
             {
-              name: ''
-              value: ''
+              name: 'VUE_APP_ORDER_SERVICE_URL'
+              value: orderServiceUri
             }
             {
-              name: ''
-              value: ''
+              name: 'VUE_APP_PRODUCT_SERVICE_URL'
+              value: productServiceUri
             }
           ]
           probes: [
             {
-              type: 'liveness'
+              type: 'Liveness'
               httpGet: {
-                path: '/'
-                port: 80
+                path: '/health'
+                port: 8080
               }
-              initialDelaySeconds: 20
+              initialDelaySeconds: 3
               periodSeconds: 3
-              failureThreshold: 3
+              failureThreshold: 5
             }
             {
-              type: 'readiness'
-              tcpSocket: {
-                port: 80
-              }
-              initialDelaySeconds: 10
-              periodSeconds: 3
-              failureThreshold: 3
-            }
-            {
-              type: 'startup'
+              type: 'Readiness'
               httpGet: {
-                path: '/'
-                port: 80
+                path: '/health'
+                port: 8080
               }
               initialDelaySeconds: 3
               periodSeconds: 3
               failureThreshold: 3
             }
+            {
+              type: 'Startup'
+              httpGet: {
+                path: '/health'
+                port: 8080
+              }
+              initialDelaySeconds: 5
+              periodSeconds: 5
+              failureThreshold: 3
+            }
           ]
         }
       ]
       scale: {
         minReplicas: 1
-        maxReplicas: 3
       }
-      volumes: [
-        {
-          name: ''
-          storageType: 'Secret'
-          secrets: [
-            {
-              secretRef: ''
-              path: ''
-            }
-          ]
-        }
-      ]
     }
   }
 }
 
-resource container2 'Microsoft.App/containerApps@2023-05-01' = {
-  name: 'aca2'
+resource storeadmin 'Microsoft.App/containerApps@2023-05-01' = {
+  name: 'store-admin'
   location: location
   identity: {
     type: 'UserAssigned'
@@ -121,29 +98,10 @@ resource container2 'Microsoft.App/containerApps@2023-05-01' = {
   properties: {
     managedEnvironmentId: environmentId
     configuration: {
-      secrets: [
-        {
-          name: 'openai-api-uri'
-          keyVaultUrl: openAIApiEndpointKeyUri
-          identity: managedIdentityId
-        }
-        {
-          name: 'openai-api-key'
-          keyVaultUrl: openAIApiKeyUri
-          identity: managedIdentityId
-        }
-        {
-          name: 'mongodb-connection-uri'
-          value: 'mongodb://mongodb'
-        }
-        {
-          name: 'mongodb-port'
-          value: '27017'
-        }
-      ]
       ingress: {    
         external: true //false
-        targetPort: 8000
+        exposedPort: 80
+        targetPort: 8081
         transport: 'http'
         clientCertificateMode: 'accept'
       }
@@ -151,51 +109,51 @@ resource container2 'Microsoft.App/containerApps@2023-05-01' = {
     template: {
       containers: [
         {
-          image: ''
-          name: ''
+          image: 'ghcr.io/azure-samples/aks-store-demo/store-admin:latest'
+          name: 'store-admin'
           resources: {
             cpu: json('1.0')
             memory: '2.0Gi'
           }
           env: [
             {
-              name: ''
-              value: ''
+              name: 'VUE_APP_MAKELINE_SERVICE_URL'
+              value: makelineServiceUri
             }
             {
-              name: ''
-              value: ''
+              name: 'VUE_APP_PRODUCT_SERVICE_URL'
+              value: productServiceUri
             }
           ]
           probes: [
             {
-              type: 'liveness'
+              type: 'Liveness'
               httpGet: {
-                path: '/docs'
-                port: 8000
+                path: '/health'
+                port: 8081
               }
-              initialDelaySeconds: 30
+              initialDelaySeconds: 3
               periodSeconds: 3
+              failureThreshold: 5
+            }
+            {
+              type: 'Readiness'
+              httpGet: {
+                path: '/health'
+                port: 8081
+              }
+              initialDelaySeconds: 3
+              periodSeconds: 5
               failureThreshold: 3
             }
             {
-              type: 'readiness'
+              type: 'Startup'
               httpGet: {
-                path: '/docs'
-                port: 8000
+                path: '/health'
+                port: 8081
               }
-              initialDelaySeconds: 30
-              periodSeconds: 3
-              failureThreshold: 3
-            }
-            {
-              type: 'startup'
-              httpGet: {
-                path: '/docs'
-                port: 8000
-              }
-              initialDelaySeconds: 30
-              periodSeconds: 3
+              initialDelaySeconds: 5
+              periodSeconds: 5
               failureThreshold: 3
             }
           ]
@@ -203,10 +161,8 @@ resource container2 'Microsoft.App/containerApps@2023-05-01' = {
       ]
       scale: {
         minReplicas: 1
-        maxReplicas: 3
       }
     }
   }
   tags: tags
 }
-
