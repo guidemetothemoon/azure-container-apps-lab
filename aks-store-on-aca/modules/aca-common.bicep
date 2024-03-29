@@ -1,8 +1,8 @@
 param location string
 param logAnalyticsCustomerId string
 //param nsgName string
-param storageFileShareName string
-param storageName string
+//param storageFileShareName string
+//param storageName string
 param subnetId string
 param tags object
 
@@ -12,9 +12,7 @@ param appInsightsConnectionString string
 @secure()
 param logAnalyticsKey string
 
-resource acaStorage 'Microsoft.Storage/storageAccounts@2022-09-01' existing = {
-  name: storageName
-}
+
 
 resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-11-02-preview' = {
   name: 'cae-aca-store'
@@ -36,6 +34,10 @@ resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-11-02-
   }
   tags: tags
 }
+/*
+resource acaStorage 'Microsoft.Storage/storageAccounts@2022-09-01' existing = {
+  name: storageName
+}
 
 resource rabbitmqStorageMount 'Microsoft.App/managedEnvironments/storages@2023-05-01' = {
   name: 'rabbitmqstorage'
@@ -49,6 +51,7 @@ resource rabbitmqStorageMount 'Microsoft.App/managedEnvironments/storages@2023-0
     }
   }
 }
+*/
 
 /*
 resource containerAppsInboundNsgRule 'Microsoft.Network/networkSecurityGroups/securityRules@2023-05-01' = {  
@@ -67,4 +70,4 @@ resource containerAppsInboundNsgRule 'Microsoft.Network/networkSecurityGroups/se
 */
 output defaultDomain string = containerAppsEnvironment.properties.defaultDomain
 output environmentId string = containerAppsEnvironment.id
-output rabbitmqStorageName string = rabbitmqStorageMount.name
+//output rabbitmqStorageName string = rabbitmqStorageMount.name

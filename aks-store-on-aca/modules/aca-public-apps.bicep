@@ -6,7 +6,7 @@ param orderServiceUri string
 param productServiceUri string
 param tags object
 
-resource storefront 'Microsoft.App/containerApps@2023-05-01' = {
+resource storefront 'Microsoft.App/containerApps@2023-05-02-preview' = {
   name: 'store-front'
   location: location
   identity: {
@@ -20,7 +20,6 @@ resource storefront 'Microsoft.App/containerApps@2023-05-01' = {
     configuration: {
       ingress: { 
         external: true
-        exposedPort: 80
         targetPort: 8080
         transport: 'http'
         clientCertificateMode: 'accept'
@@ -86,7 +85,7 @@ resource storefront 'Microsoft.App/containerApps@2023-05-01' = {
   }
 }
 
-resource storeadmin 'Microsoft.App/containerApps@2023-05-01' = {
+resource storeadmin 'Microsoft.App/containerApps@2023-05-02-preview' = {
   name: 'store-admin'
   location: location
   identity: {
@@ -99,8 +98,7 @@ resource storeadmin 'Microsoft.App/containerApps@2023-05-01' = {
     managedEnvironmentId: environmentId
     configuration: {
       ingress: {    
-        external: true //false
-        exposedPort: 80
+        external: true        
         targetPort: 8081
         transport: 'http'
         clientCertificateMode: 'accept'
@@ -166,3 +164,6 @@ resource storeadmin 'Microsoft.App/containerApps@2023-05-01' = {
   }
   tags: tags
 }
+
+output storeFrontUri string = 'https://${storefront.properties.configuration.ingress.fqdn}'
+output storeAdminUri string = 'https://${storeadmin.properties.configuration.ingress.fqdn}'

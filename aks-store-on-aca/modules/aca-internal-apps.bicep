@@ -1,10 +1,20 @@
 param environmentId string
 param location string
-param managedIdentityId string
-param openAIApiEndpointKeyUri string
-param rabbitmqStorageName string
+
+//param rabbitmqStorageName string
 param subnetIpRange string
 param tags object
+
+@secure()
+param openAIEndpoint string
+
+@secure()
+param queueUsername string
+
+@secure()
+param queuePass string
+
+var rabbitmqPluginsConf = loadTextContent('rabbitmq_enabled_plugins')
 
 // MongoDB instance for persisted data
 
@@ -90,15 +100,19 @@ resource rabbitmq 'Microsoft.App/containerApps@2023-05-02-preview' = {
         ]
       }
       secrets: [
+        //{
+        //  name: 'queue-username'
+        //  keyVaultUrl: 'foo' // TODO
+        //  identity: managedIdentityId
+        //}
+        //{
+        //  name: 'queue-password'
+        //  keyVaultUrl: 'bar' // TODO
+        //  identity: managedIdentityId
+        //}
         {
-          name: 'queue-username'
-          keyVaultUrl: 'foo' // TODO
-          identity: managedIdentityId
-        }
-        {
-          name: 'queue-password'
-          keyVaultUrl: 'bar' // TODO
-          identity: managedIdentityId
+          name: 'rabbitmq-enabled-plugins'
+          value: rabbitmqPluginsConf
         }
       ]
     }
@@ -114,11 +128,13 @@ resource rabbitmq 'Microsoft.App/containerApps@2023-05-02-preview' = {
           env: [
             {
               name: 'RABBITMQ_DEFAULT_USER'
-              secretRef: 'queue-username'
+              value: queueUsername
+              //secretRef: 'queue-username'
             }
             {
               name: 'RABBITMQ_DEFAULT_PASS'
-              secretRef: 'queue-password'
+              value: queuePass
+              //secretRef: 'queue-password'
             }
           ]
           volumeMounts: [
@@ -133,11 +149,16 @@ resource rabbitmq 'Microsoft.App/containerApps@2023-05-02-preview' = {
       scale: {
         minReplicas: 1
       }
-      volumes: [mongodb
+      volumes: [
         {
           name: 'rabbitmq-enabled-plugins'
-          storageType: 'AzureFile'
-          storageName: rabbitmqStorageName
+          storageType: 'Secret'
+          secrets: [
+            {
+              secretRef: 'rabbitmq-enabled-plugins'
+              path: 'enabled_plugins'
+            }
+          ]
         }
       ]
     }
@@ -153,8 +174,10 @@ resource orderservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
     configuration: {
       ingress: {
         external: false
-        targetPort: 3000
+        targetPort: 80
+        //exposedPort: 3000
         transport: 'http'
+        allowInsecure: true
         ipSecurityRestrictions: [
           {
             name: 'AllowSnet'
@@ -163,19 +186,14 @@ resource orderservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
             ipAddressRange:  subnetIpRange
           }
         ]
+        additionalPortMappings: [
+          {
+            external: false
+            targetPort: 3000
+            exposedPort: 3000
+          }
+        ]
       }
-      secrets: [
-        {
-          name: 'queue-username'
-          keyVaultUrl: 'foo' // TODO
-          identity: managedIdentityId
-        }
-        {
-          name: 'queue-password'
-          keyVaultUrl: 'bar' // TODO
-          identity: managedIdentityId
-        }
-      ]
     }
     template: {
       containers: [
@@ -197,11 +215,11 @@ resource orderservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
             }
             {
               name: 'ORDER_QUEUE_USERNAME'
-              secretRef: 'queue-username'
+              value: queueUsername
             }
             {
               name: 'ORDER_QUEUE_PASSWORD'
-              secretRef: 'queue-password'
+             value: queuePass
             }
             {
               name: 'ORDER_QUEUE_NAME'
@@ -246,21 +264,21 @@ resource orderservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
           ]
         }
       ]
-      initContainers: [
-        {
-          name: 'wait-for-rabbitmq'
-          image: 'busybox'
-          command: [
-            'sh'
-            '-c'
-            'until nc -zv rabbitmq 5672; do echo waiting for rabbitmq; sleep 2; done;'
-          ]
-          resources: {
-            cpu: json('0.25')
-            memory: '0.5Gi'
-          }
-        }
-      ]
+      //initContainers: [
+      //  {
+      //    name: 'wait-for-rabbitmq'
+      //    image: 'busybox'
+      //    command: [
+      //      'sh'
+      //      '-c'
+      //      'until nc -zv rabbitmq 5672; do echo "waiting for rabbitmq"; sleep 2; done;'
+      //    ]
+      //    resources: {
+      //      cpu: json('0.25')
+      //      memory: '0.5Gi'
+      //    }
+      //  }
+      //]
       scale: {
         minReplicas: 1
       }
@@ -277,8 +295,9 @@ resource makelineservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
     configuration: {
       ingress: {
         external: false
-        targetPort: 3001
+        targetPort: 81
         transport: 'http'
+        allowInsecure: true
         ipSecurityRestrictions: [
           {
             name: 'AllowSnet'
@@ -287,19 +306,14 @@ resource makelineservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
             ipAddressRange:  subnetIpRange
           }
         ]
+        additionalPortMappings: [
+          {
+            external: false
+            targetPort: 3001
+            exposedPort: 3001
+          }
+        ]
       }
-      secrets: [
-        {
-          name: 'order-queue-username'
-          keyVaultUrl: 'foo' // TODO
-          identity: managedIdentityId
-        }
-        {
-          name: 'order-queue-password'
-          keyVaultUrl: 'bar' // TODO
-          identity: managedIdentityId
-        }
-      ]
     }
     template: {
       containers: [
@@ -317,11 +331,11 @@ resource makelineservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
             }
             {
               name: 'ORDER_QUEUE_USERNAME'
-              secretRef: 'order-queue-username'
+              value: queueUsername
             }
             {
               name: 'ORDER_QUEUE_PASSWORD'
-              secretRef: 'order-queue-password'
+              value: queuePass
             }
             {
               name: 'ORDER_QUEUE_NAME'
@@ -380,8 +394,9 @@ resource productservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
     configuration: {
       ingress: {
         external: false
-        targetPort: 3002
+        targetPort: 82
         transport: 'http'
+        allowInsecure: true
         ipSecurityRestrictions: [
           {
             name: 'AllowSnet'
@@ -390,7 +405,14 @@ resource productservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
             ipAddressRange:  subnetIpRange
           }
         ]
-      }      
+        additionalPortMappings: [
+          {
+            external: false
+            targetPort: 3002
+            exposedPort: 3002
+          }
+        ]
+      }  
     }
     template: {
       containers: [
@@ -404,7 +426,7 @@ resource productservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
           env: [
             {
               name: 'AI_SERVICE_URL'
-              value: openAIApiEndpointKeyUri
+              value: openAIEndpoint
             }
           ]
           probes: [
@@ -457,7 +479,7 @@ resource virtualcustomer 'Microsoft.App/containerApps@2023-05-02-preview' = {
           env: [
             {
               name: 'ORDER_SERVICE_URL'
-              value: orderservice.properties.configuration.ingress.fqdn
+              value: 'http://${orderservice.properties.configuration.ingress.fqdn}'
             }
             {
               name: 'ORDERS_PER_HOUR'
@@ -491,7 +513,7 @@ resource virtualworker 'Microsoft.App/containerApps@2023-05-02-preview' = {
           env: [
             {
               name: 'MAKELINE_SERVICE_URL'
-              value: makelineservice.properties.configuration.ingress.fqdn
+              value: 'http://${makelineservice.properties.configuration.ingress.fqdn}'
             }
             {
               name: 'ORDERS_PER_HOUR'
@@ -508,6 +530,6 @@ resource virtualworker 'Microsoft.App/containerApps@2023-05-02-preview' = {
   tags: tags
 }
 
-output makelineServiceUri string = makelineservice.properties.configuration.ingress.fqdn
-output orderServiceUri string =  orderservice.properties.configuration.ingress.fqdn
-output productServiceUri string = productservice.properties.configuration.ingress.fqdn
+output makelineServiceUri string = 'http://${makelineservice.properties.configuration.ingress.fqdn}'
+output orderServiceUri string =  'http://${orderservice.properties.configuration.ingress.fqdn}'
+output productServiceUri string = 'http://${productservice.properties.configuration.ingress.fqdn}'

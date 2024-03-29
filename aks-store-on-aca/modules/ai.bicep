@@ -1,40 +1,41 @@
 param dnsZoneOpenAIId string
 param keyVaultName string
 param location string
+param openAILocation string
 param subnetId string
 param tags object
+
 var cognitiveAccountName = 'coga-${uniqueString('cognitive', resourceGroup().id)}'
 
-resource keyVaultShared 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
+resource keyVaultACAShared 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
   name: keyVaultName
 }
 
 resource cognitiveAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   name: cognitiveAccountName
-  location: location
+  location: openAILocation
   sku: {
     name: 'S0'
   }
   kind: 'OpenAI'
   identity: {
-    type: 'None'
+    type: 'SystemAssigned'
   }
   properties: {
     customSubDomainName: cognitiveAccountName
     publicNetworkAccess: 'Disabled'
     restrictOutboundNetworkAccess: false
     disableLocalAuth: false
-    dynamicThrottlingEnabled: false
   }
   tags: tags
 }
 
-resource cognitiveAccountDeploymentGpt35Turbo 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
+resource cognitiveAccountDeploymentGpt432k 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
   parent: cognitiveAccount
   name: 'gpt-4-32k'
   sku: {
     name: 'Standard'
-    capacity: 80
+    capacity: 60
   }
   properties: {
     model: {
@@ -84,7 +85,7 @@ resource cogaPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZ
 }
 
 resource openAIKeySecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVaultShared
+  parent: keyVaultACAShared
   name: 'cogaKey'
   properties: {
     value: cognitiveAccount.listKeys().key1
@@ -92,7 +93,7 @@ resource openAIKeySecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
 }
 
 resource cognitiveAccountEndpoint 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVaultShared
+  parent: keyVaultACAShared
   name: 'cogaEndpoint'
   properties: {
     value: cognitiveAccount.properties.endpoint

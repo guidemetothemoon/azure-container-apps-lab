@@ -8,7 +8,7 @@ param logAnalyticsWorkspaceId string
 param storageName string = 'store${uniqueString(resourceGroup().id)}'
 param tags object
 
-resource keyVaultShared 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
+resource keyVaultACAShared 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
   name: keyVaultName
 }
 
@@ -142,7 +142,7 @@ resource privateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneG
 }
 
 resource storageAccountSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVaultShared
+  parent: keyVaultACAShared
   name: 'storageAccountKey'
   properties: {
     value: storageAccount.listKeys().keys[0].value
@@ -150,7 +150,7 @@ resource storageAccountSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
 }
 
 resource storageEndpoint 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVaultShared
+  parent: keyVaultACAShared
   name: 'storageEndpoint'
   properties: {
     value: '${storageAccount.name}.${dnsZoneName}.${environment().suffixes.storage}'

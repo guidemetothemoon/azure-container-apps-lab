@@ -1,15 +1,27 @@
+targetScope='subscription'
+
+param acaResourceGroupName string
+param commonResourceGroupName string
+//param commonKeyVaultManagedIdentityName string
+param commonKeyVaultName string
 param environment string
 param location string
 param locationPrefix string
+param openAILocation string
 param subnets array
 param tags object
 param vnetIpRange string
+
+resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
+  name: acaResourceGroupName
+  location: location
+}
 
 /* Common resources that will be shared across services in the resource group */
 
 module common 'modules/common.bicep' = {
   name: 'common'
-  scope: resourceGroup()
+  scope: rg
   params: {
     environment: environment
     keyVaultName: keyvault.outputs.keyVaultName
@@ -23,7 +35,7 @@ module common 'modules/common.bicep' = {
 // TODO: look into iterating a list of DNS zones provided as parameter from the params file
 module vnet 'modules/network.bicep' = {
   name: 'vnet'
-  scope: resourceGroup()
+  scope: rg
   params: { 
     dnsZoneNameFile: 'privatelink.file.${az.environment().suffixes.storage}'
     dnsZoneNameKeyVault: 'privatelink.vaultcore.azure.net'
@@ -40,7 +52,7 @@ module vnet 'modules/network.bicep' = {
 /* Azure Key Vault resources, including respective access control and private endpoint configuration */
 module keyvault 'modules/keyvault.bicep' = {
   name: 'keyvault'
-  scope: resourceGroup()
+  scope: rg
   params: {
     location: location
     tags: tags
@@ -50,18 +62,20 @@ module keyvault 'modules/keyvault.bicep' = {
   dependsOn: [vnet]
 }
 
-resource keyVaultShared 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
+resource keyVaultACAShared 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
   name: keyvault.outputs.keyVaultName
+  scope: rg
 }
 
 // AI-related services, like Azure OpenAI
 module ai 'modules/ai.bicep' = {
   name: 'ai'
-  scope: resourceGroup()
+  scope: rg
   params: {
     dnsZoneOpenAIId: vnet.outputs.dnsZoneOpenAIId
     keyVaultName: keyvault.outputs.keyVaultName
     location: location
+    openAILocation: openAILocation
     subnetId: vnet.outputs.acaSubnetId
     tags: tags    
   }
@@ -70,7 +84,7 @@ module ai 'modules/ai.bicep' = {
 
 module storage 'modules/storage.bicep' = {
   name: 'storage'
-  scope: resourceGroup()
+  scope: rg
   params: {    
     dnsZoneId: vnet.outputs.dnsZoneFileId
     dnsZoneName: 'file'
@@ -86,29 +100,42 @@ module storage 'modules/storage.bicep' = {
 
 module acacommon 'modules/aca-common.bicep' = {
   name: 'aca-common'
+  scope: rg
   params: {
-    appInsightsConnectionString: keyVaultShared.getSecret(common.outputs.appInsightsConnectionString)
+    appInsightsConnectionString: keyVaultACAShared.getSecret(common.outputs.appInsightsConnectionString)
     location: location
     logAnalyticsCustomerId: common.outputs.logAnalyticsCustomerId
-    logAnalyticsKey: keyVaultShared.getSecret(common.outputs.logAnalyticsKey)
+    logAnalyticsKey: keyVaultACAShared.getSecret(common.outputs.logAnalyticsKey)
     //nsgName: vnet.outputs.nsgName
-    storageFileShareName: storage.outputs.storageFileShareName
-    storageName: storage.outputs.storageAccountName
+    //storageFileShareName: storage.outputs.storageFileShareName
+    //storageName: storage.outputs.storageAccountName
     subnetId: vnet.outputs.acaSubnetId
     tags: tags
   }
-  dependsOn: [common, storage, vnet]
+  dependsOn: [common, keyvault, storage, vnet]
 }
+
+resource keyVaultCommon 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
+  scope: resourceGroup(commonResourceGroupName)
+  name: commonKeyVaultName
+}
+
+//resource keyVaultCommonManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
+//  scope: resourceGroup(commonResourceGroupName)
+//  name: commonKeyVaultManagedIdentityName
+//}
 
 module backend 'modules/aca-internal-apps.bicep' = {
   name: 'backend'
-  scope: resourceGroup()
+  scope: rg
   params: {
     location: location    
     environmentId: acacommon.outputs.environmentId
-    managedIdentityId: keyvault.outputs.managedIdentityId
-    rabbitmqStorageName: acacommon.outputs.rabbitmqStorageName
-    openAIApiEndpointKeyUri: ai.outputs.openAIEndpoint
+    //rabbitmqStorageName: acacommon.outputs.rabbitmqStorageName
+    //managedIdentityId: keyvault.outputs.managedIdentityId
+    openAIEndpoint: keyVaultACAShared.getSecret('cogaEndpoint')
+    queueUsername: keyVaultCommon.getSecret('queue-username')
+    queuePass: keyVaultCommon.getSecret('queue-password')
     subnetIpRange: vnet.outputs.acaSubnetIpRange
     tags: tags
   }
@@ -117,7 +144,7 @@ module backend 'modules/aca-internal-apps.bicep' = {
 
 module frontend 'modules/aca-public-apps.bicep' = {
   name: 'frontend'
-  scope: resourceGroup()
+  scope: rg
   params: {
     //defaultDomain: acacommon.outputs.defaultDomain
     environmentId: acacommon.outputs.environmentId
@@ -131,5 +158,8 @@ module frontend 'modules/aca-public-apps.bicep' = {
   dependsOn: [acacommon, keyvault, backend]
 }
 
-//@description('This is the frontend URL for your application')
-//output url string = frontend.outputs.frontendurl
+@description('URL for store application')
+output storeUrl string = frontend.outputs.storeFrontUri
+
+@description('URL for store admin application')
+output storeAdminUrl string = frontend.outputs.storeAdminUri
