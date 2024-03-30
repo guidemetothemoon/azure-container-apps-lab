@@ -1,0 +1,17 @@
+# WORK IN PROGRESS...
+name: deploy-aca-revision-and-traffic-management-apps
+on:
+  push:
+    branches:
+    - 'main'
+    paths:
+    - 'aca-revision-and-traffic-management/**'
+
+jobs:
+  deploy-apps-dev:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Work In Progress
+      id: work-in-progress
+      run: |
+        echo This workflow is a work in progress!
