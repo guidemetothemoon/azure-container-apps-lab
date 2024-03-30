@@ -47,12 +47,6 @@ resource mongodb 'Microsoft.App/containerApps@2023-05-02-preview' = {
             cpu: json('0.5')
             memory: '1.0Gi'
           }
-          //command: [
-          //  'mongod'
-          //  '--dbpath'
-          //  '/data/mongoaz'
-          //  '--bind_ip_all'
-          //]
           probes: [
             {
               type: 'liveness'              
@@ -67,7 +61,6 @@ resource mongodb 'Microsoft.App/containerApps@2023-05-02-preview' = {
       ]
       scale: {
         minReplicas: 1
-        //maxReplicas: 3
       }
     }
   }  
@@ -100,16 +93,6 @@ resource rabbitmq 'Microsoft.App/containerApps@2023-05-02-preview' = {
         ]
       }
       secrets: [
-        //{
-        //  name: 'queue-username'
-        //  keyVaultUrl: 'foo' // TODO
-        //  identity: managedIdentityId
-        //}
-        //{
-        //  name: 'queue-password'
-        //  keyVaultUrl: 'bar' // TODO
-        //  identity: managedIdentityId
-        //}
         {
           name: 'rabbitmq-enabled-plugins'
           value: rabbitmqPluginsConf
@@ -129,12 +112,10 @@ resource rabbitmq 'Microsoft.App/containerApps@2023-05-02-preview' = {
             {
               name: 'RABBITMQ_DEFAULT_USER'
               value: queueUsername
-              //secretRef: 'queue-username'
             }
             {
               name: 'RABBITMQ_DEFAULT_PASS'
               value: queuePass
-              //secretRef: 'queue-password'
             }
           ]
           volumeMounts: [
@@ -174,8 +155,7 @@ resource orderservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
     configuration: {
       ingress: {
         external: false
-        targetPort: 80
-        //exposedPort: 3000
+        targetPort: 3000
         transport: 'http'
         allowInsecure: true
         ipSecurityRestrictions: [
@@ -184,13 +164,6 @@ resource orderservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
             description: 'Allow access from main subnet'
             action: 'Allow'
             ipAddressRange:  subnetIpRange
-          }
-        ]
-        additionalPortMappings: [
-          {
-            external: false
-            targetPort: 3000
-            exposedPort: 3000
           }
         ]
       }
@@ -295,7 +268,7 @@ resource makelineservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
     configuration: {
       ingress: {
         external: false
-        targetPort: 81
+        targetPort: 3001
         transport: 'http'
         allowInsecure: true
         ipSecurityRestrictions: [
@@ -304,13 +277,6 @@ resource makelineservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
             description: 'Allow access from main subnet'
             action: 'Allow'
             ipAddressRange:  subnetIpRange
-          }
-        ]
-        additionalPortMappings: [
-          {
-            external: false
-            targetPort: 3001
-            exposedPort: 3001
           }
         ]
       }
@@ -394,22 +360,15 @@ resource productservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
     configuration: {
       ingress: {
         external: false
-        targetPort: 82
+        targetPort: 3002
         transport: 'http'
-        allowInsecure: true
+        allowInsecure: false
         ipSecurityRestrictions: [
           {
             name: 'AllowSnet'
             description: 'Allow access from main subnet'
             action: 'Allow'
             ipAddressRange:  subnetIpRange
-          }
-        ]
-        additionalPortMappings: [
-          {
-            external: false
-            targetPort: 3002
-            exposedPort: 3002
           }
         ]
       }  
@@ -530,6 +489,6 @@ resource virtualworker 'Microsoft.App/containerApps@2023-05-02-preview' = {
   tags: tags
 }
 
-output makelineServiceUri string = 'http://${makelineservice.properties.configuration.ingress.fqdn}'
-output orderServiceUri string =  'http://${orderservice.properties.configuration.ingress.fqdn}'
-output productServiceUri string = 'http://${productservice.properties.configuration.ingress.fqdn}'
+output makelineServiceUri string = 'https://${makelineservice.properties.configuration.ingress.fqdn}'
+output orderServiceUri string =  'https://${orderservice.properties.configuration.ingress.fqdn}'
+output productServiceUri string = 'https://${productservice.properties.configuration.ingress.fqdn}'

@@ -1,3 +1,5 @@
+import { replaceMultipleStrings } from '../functions.bicep'
+
 param environmentId string
 param location string
 param makelineServiceUri string
@@ -5,6 +7,20 @@ param managedIdentityId string
 param orderServiceUri string
 param productServiceUri string
 param tags object
+
+var storeFrontNginxConfReplacements = { 
+  '{ORDER_SERVICE_URI}': orderServiceUri
+  '{PRODUCT_SERVICE_URI}': productServiceUri
+}
+
+var storeAdminNginxConfReplacements = { 
+  '{MAKELINE_SERVICE_URI}': makelineServiceUri
+  '{ORDER_SERVICE_URI}': orderServiceUri
+  '{PRODUCT_SERVICE_URI}': productServiceUri
+}
+
+var storeFrontNginxConf = replaceMultipleStrings(loadTextContent('storeFrontNginx.conf'), storeFrontNginxConfReplacements)
+var storeAdminNginxConf = replaceMultipleStrings(loadTextContent('storeAdminNginx.conf'), storeAdminNginxConfReplacements)
 
 resource storefront 'Microsoft.App/containerApps@2023-05-02-preview' = {
   name: 'store-front'
@@ -24,6 +40,12 @@ resource storefront 'Microsoft.App/containerApps@2023-05-02-preview' = {
         transport: 'http'
         clientCertificateMode: 'accept'
       }
+      secrets: [
+        {
+          name: 'nginx-conf'
+          value: storeFrontNginxConf
+        }
+      ]
     }
     template: {
       containers: [
@@ -42,6 +64,17 @@ resource storefront 'Microsoft.App/containerApps@2023-05-02-preview' = {
             {
               name: 'VUE_APP_PRODUCT_SERVICE_URL'
               value: productServiceUri
+            }
+          ]
+          command: [
+            '/bin/sh'
+            '-c'
+            'echo Ready to serve! && nginx -g \'daemon off;\''
+          ]
+          volumeMounts: [
+            {
+              mountPath: '/etc/nginx/conf.d/'
+              volumeName: 'nginx-conf'
             }
           ]
           probes: [
@@ -81,6 +114,22 @@ resource storefront 'Microsoft.App/containerApps@2023-05-02-preview' = {
       scale: {
         minReplicas: 1
       }
+      volumes: [
+        {
+          name: 'nginx-conf'
+          storageType: 'Secret'
+          secrets: [
+            {
+              secretRef: 'nginx-conf'
+              path: 'default.conf'
+            }
+            {
+              secretRef: 'nginx-conf'
+              path: 'nginx.conf.template'
+            }
+          ]
+        }
+      ]
     }
   }
 }
@@ -103,16 +152,28 @@ resource storeadmin 'Microsoft.App/containerApps@2023-05-02-preview' = {
         transport: 'http'
         clientCertificateMode: 'accept'
       }
+      secrets: [
+        {
+          name: 'nginx-conf'
+          value: storeAdminNginxConf
+        }
+      ]
     }
     template: {
       containers: [
         {
           image: 'ghcr.io/azure-samples/aks-store-demo/store-admin:latest'
+          
           name: 'store-admin'
           resources: {
             cpu: json('1.0')
             memory: '2.0Gi'
           }
+          command: [
+            '/bin/sh'
+            '-c'
+            'echo Ready to serve! && nginx -g \'daemon off;\''
+          ]
           env: [
             {
               name: 'VUE_APP_MAKELINE_SERVICE_URL'
@@ -121,6 +182,12 @@ resource storeadmin 'Microsoft.App/containerApps@2023-05-02-preview' = {
             {
               name: 'VUE_APP_PRODUCT_SERVICE_URL'
               value: productServiceUri
+            }
+          ]
+          volumeMounts: [
+            {
+              mountPath: '/etc/nginx/conf.d/'
+              volumeName: 'nginx-conf'
             }
           ]
           probes: [
@@ -160,6 +227,22 @@ resource storeadmin 'Microsoft.App/containerApps@2023-05-02-preview' = {
       scale: {
         minReplicas: 1
       }
+      volumes: [
+        {
+          name: 'nginx-conf'
+          storageType: 'Secret'
+          secrets: [
+            {
+              secretRef: 'nginx-conf'
+              path: 'default.conf'
+            }
+            {
+              secretRef: 'nginx-conf'
+              path: 'nginx.conf.template'
+            }
+          ]
+        }
+      ]
     }
   }
   tags: tags
