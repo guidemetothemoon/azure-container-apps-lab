@@ -36,7 +36,7 @@ jobs:
           scope: 'subscription'
           deploymentName: ${{ github.run_number }}
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          template: ./main.bicep
-          parameters: ./parameters/dev.bicepparam
+          template: main.bicep
+          parameters: parameters/dev.bicepparam
           region: ${{ env.AZURE_REGION }}
 
