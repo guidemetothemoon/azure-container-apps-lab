@@ -7,6 +7,8 @@ on:
       - 'main'
     paths:
       - 'aca-revision-and-traffic-management/**'
+      - '.github/workflows/deploy-aca-revision-and-traffic-management-apps.yml'
+
   workflow_dispatch:
 
 env:
@@ -21,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3        
 
       - name: Login to Azure
         uses: azure/login@v1
@@ -36,7 +38,7 @@ jobs:
           scope: 'subscription'
           deploymentName: ${{ github.run_number }}
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          template: main.bicep
-          parameters: parameters/dev.bicepparam
+          template: ${{ github.workspace }}/aca-revision-and-traffic-management/main.bicep
+          parameters: ${{ github.workspace }}/aca-revision-and-traffic-management/parameters/dev.bicepparam
           region: ${{ env.AZURE_REGION }}
 
