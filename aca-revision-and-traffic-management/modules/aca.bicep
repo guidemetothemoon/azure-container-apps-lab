@@ -2,6 +2,7 @@ param environmentId string
 param location string
 param managedIdentityId string
 param tags object
+param trafficDistribution array
 
 resource helloworld 'Microsoft.App/containerApps@2023-05-02-preview' = {
   name: 'aca-helloworld'
@@ -21,7 +22,10 @@ resource helloworld 'Microsoft.App/containerApps@2023-05-02-preview' = {
         targetPort: 80
         transport: 'http'
         clientCertificateMode: 'accept'
+        traffic: trafficDistribution
       }
+      activeRevisionsMode: 'Multiple'
+      maxInactiveRevisions: 2
     }
     template: {
       containers: [

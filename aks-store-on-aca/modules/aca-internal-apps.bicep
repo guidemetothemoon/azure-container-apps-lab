@@ -361,6 +361,7 @@ resource productservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
         targetPort: 3002
         transport: 'http'
         allowInsecure: false
+        clientCertificateMode: 'accept'
         ipSecurityRestrictions: [
           {
             name: 'AllowSnet'

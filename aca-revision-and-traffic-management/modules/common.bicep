@@ -1,4 +1,3 @@
-// TODO
 param environment string
 param location string
 param tags object

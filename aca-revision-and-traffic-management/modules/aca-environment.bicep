@@ -11,6 +11,7 @@ resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-11-02-
       '${managedIdentityId}' : {}
     }
   }
+  properties: { }
   tags: tags
 }
 

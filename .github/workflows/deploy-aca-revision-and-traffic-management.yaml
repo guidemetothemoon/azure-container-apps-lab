@@ -1,17 +1,38 @@
-# WORK IN PROGRESS...
+# Traffic splitting can be automated further, with revision name generation, health checks and full re-routing to the new version upon successful checks.
+# Microsoft has created a useful repository with a sample implementation of this process that can be used for reference and inspiration: https://github.com/Azure-Samples/containerapps-blue-green
 name: deploy-aca-revision-and-traffic-management-apps
 on:
   push:
     branches:
-    - 'main'
+      - 'main'
     paths:
-    - 'aca-revision-and-traffic-management/**'
+      - 'aca-revision-and-traffic-management/**'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   deploy-apps-dev:
     runs-on: ubuntu-latest
     steps:
-    - name: Work In Progress
-      id: work-in-progress
-      run: |
-        echo This workflow is a work in progress!
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to dev
+        uses: azure/arm-deploy@v2
+        with:
+          scope: 'subscription'
+          deploymentName: ${{ github.run_number }}
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          template: ./main.bicep
+          parameters: ./parameters/dev.bicepparam
+

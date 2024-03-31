@@ -1,11 +1,10 @@
-// TODO
 targetScope='subscription'
 
 param acaResourceGroupName string
 param environment string
 param location string
-param locationPrefix string
 param tags object
+param trafficDistribution array
 
 resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   name: acaResourceGroupName
@@ -41,6 +40,7 @@ module aca 'modules/aca.bicep' = {
     location: location
     managedIdentityId: common.outputs.managedIdentityId
     tags: tags
+    trafficDistribution: trafficDistribution
   }
   dependsOn: [acaenvironment]
 }
