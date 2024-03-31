@@ -1,5 +1,6 @@
 param location string
 param logAnalyticsCustomerId string
+param managedIdentityId string
 param nsgName string
 param subnetId string
 param tags object
@@ -15,6 +16,12 @@ param logAnalyticsKey string
 resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-11-02-preview' = {
   name: 'cae-aca-store'
   location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentityId}' : {}
+    }
+  }  
   properties: {
     appInsightsConfiguration: {
       connectionString: appInsightsConnectionString
@@ -48,5 +55,4 @@ resource containerAppsInboundNsgRule 'Microsoft.Network/networkSecurityGroups/se
   }
 }
 
-output defaultDomain string = containerAppsEnvironment.properties.defaultDomain
 output environmentId string = containerAppsEnvironment.id

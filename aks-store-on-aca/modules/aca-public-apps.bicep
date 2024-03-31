@@ -123,15 +123,12 @@ resource storefront 'Microsoft.App/containerApps@2023-05-02-preview' = {
               secretRef: 'nginx-conf'
               path: 'default.conf'
             }
-            {
-              secretRef: 'nginx-conf'
-              path: 'nginx.conf.template'
-            }
           ]
         }
       ]
     }
   }
+  tags: tags
 }
 
 resource storeadmin 'Microsoft.App/containerApps@2023-05-02-preview' = {
@@ -235,10 +232,6 @@ resource storeadmin 'Microsoft.App/containerApps@2023-05-02-preview' = {
             {
               secretRef: 'nginx-conf'
               path: 'default.conf'
-            }
-            {
-              secretRef: 'nginx-conf'
-              path: 'nginx.conf.template'
             }
           ]
         }

@@ -106,6 +106,7 @@ module acacommon 'modules/aca-common.bicep' = {
     location: location
     logAnalyticsCustomerId: azuremonitor.outputs.logAnalyticsCustomerId
     logAnalyticsKey: keyVaultACAShared.getSecret(azuremonitor.outputs.logAnalyticsKey)
+    managedIdentityId: common.outputs.managedIdentityId
     nsgName: vnet.outputs.nsgName
     subnetId: vnet.outputs.acaSubnetId
     tags: tags
@@ -132,7 +133,6 @@ module frontend 'modules/aca-public-apps.bicep' = {
   name: 'frontend'
   scope: rg
   params: {
-    //defaultDomain: acacommon.outputs.defaultDomain
     environmentId: acacommon.outputs.environmentId
     location: location
     makelineServiceUri: backend.outputs.makelineServiceUri

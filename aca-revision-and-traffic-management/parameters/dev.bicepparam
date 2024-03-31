@@ -1,6 +1,6 @@
 using '../main.bicep'
 
-param acaResourceGroupName = 'rg-aca-helloworld-revision-${locationPrefix}-${environment}'
+param acaResourceGroupName = 'rg-aca-helloworld-${locationPrefix}-${environment}'
 param environment = 'dev'
 param location = 'northeurope'
 param locationPrefix = 'neu'

@@ -16,11 +16,11 @@ resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2021-10-01' = {
-  name: 'kv-${uniqueString('keyvault', resourceGroup().id)}'
+  name: 'kv-${uniqueString('keyvault', resourceGroup().id, deployment().name)}'
   location: location
   properties: {
     enabledForTemplateDeployment: true
-    enablePurgeProtection: false // for production you would want it to be enabled, i.e. set to 'true'
+    enableSoftDelete: false // for production you would want it to be enabled, i.e. set to 'true', together with purge protection (enablePurgeProtection: true)    
     enableRbacAuthorization: true
     publicNetworkAccess: 'Disabled'
     tenantId: tenantId
