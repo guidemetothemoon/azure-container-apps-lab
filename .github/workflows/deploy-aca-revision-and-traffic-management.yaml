@@ -9,6 +9,9 @@ on:
       - 'aca-revision-and-traffic-management/**'
   workflow_dispatch:
 
+env:
+  AZURE_REGION: 'northeurope'
+
 permissions:
   id-token: write
   contents: read
@@ -35,4 +38,5 @@ jobs:
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           template: ./main.bicep
           parameters: ./parameters/dev.bicepparam
+          region: ${{ env.AZURE_REGION }}
 
