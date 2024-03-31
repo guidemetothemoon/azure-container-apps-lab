@@ -8,8 +8,10 @@ param subnets array
 param tags object
 param vnetIpRange string
 
+var vnetName = 'vnet-${locationPrefix}-${environment}'
+
 resource vnet 'Microsoft.Network/virtualNetworks@2023-04-01' = {
-  name: 'vnet-${locationPrefix}-${environment}'
+  name: vnetName
   location: location
   properties: {
     addressSpace: {
@@ -22,9 +24,9 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-04-01' = {
         name: subnet.name
         properties: {
           addressPrefix: subnet.subnetPrefix
-          //networkSecurityGroup: {
-          //  id: nsg.id
-          //}
+          networkSecurityGroup: {
+            id: nsg.id
+          }
           serviceEndpoints: [
             {
               service: 'Microsoft.KeyVault'
@@ -50,7 +52,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-04-01' = {
 // Ref. https://learn.microsoft.com/en-us/azure/container-apps/firewall-integration#nsg-allow-rules
 
 resource nsg 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {
-  name: 'nsg-${vnet.name}'
+  name: 'nsg-${vnetName}'
   location: location
   properties: {
     securityRules: [

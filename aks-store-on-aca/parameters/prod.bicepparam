@@ -22,4 +22,3 @@ param subnets = [
 
 param commonResourceGroupName = ''
 param commonKeyVaultName = ''
-//param commonKeyVaultManagedIdentityName = ''

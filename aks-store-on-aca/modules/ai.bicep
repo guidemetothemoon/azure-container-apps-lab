@@ -1,6 +1,7 @@
 param dnsZoneOpenAIId string
 param keyVaultName string
 param location string
+param managedIdentityId string
 param openAILocation string
 param subnetId string
 param tags object
@@ -19,7 +20,10 @@ resource cognitiveAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   }
   kind: 'OpenAI'
   identity: {
-    type: 'SystemAssigned'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentityId}' : {}
+    }
   }
   properties: {
     customSubDomainName: cognitiveAccountName

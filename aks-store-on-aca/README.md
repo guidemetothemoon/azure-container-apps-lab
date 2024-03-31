@@ -9,9 +9,9 @@ TODO
 Implementation includes following modules: (TODO: add details)
 
 * ```common```
+* ```azure-monitor```
 * ```network```
 * ```keyvault```
-* ```storage```
 * ```ai```
 * ```aca-common```
 * ```aca-public-apps```

@@ -22,4 +22,3 @@ param subnets = [
 
 param commonResourceGroupName = 'kris-chief-rg'
 param commonKeyVaultName = 'kv-neu-common'
-//param commonKeyVaultManagedIdentityName = 'uaid-neu-common'

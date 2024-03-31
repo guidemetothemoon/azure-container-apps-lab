@@ -1,7 +1,5 @@
 param environmentId string
 param location string
-
-//param rabbitmqStorageName string
 param subnetIpRange string
 param tags object
 
