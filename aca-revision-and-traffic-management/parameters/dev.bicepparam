@@ -11,10 +11,12 @@ param tags = {
 param trafficDistribution = [
   {
     latestRevision: true
-    weight: 100
-  }
-  /*{
-    revisionName: ''
     weight: 50
-  }*/
+  }
+  {
+    revisionName: 'aca-helloworld--f8u0hny'
+    weight: 50
+  }
 ]
+
+// Command to get revision name: az containerapp revision list --name aca-helloworld --resource-group rg-aca-helloworld-neu-dev --query [0].name -o tsv

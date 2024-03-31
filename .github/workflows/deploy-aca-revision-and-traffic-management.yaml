@@ -7,7 +7,7 @@ on:
       - 'main'
     paths:
       - 'aca-revision-and-traffic-management/**'
-      - '.github/workflows/deploy-aca-revision-and-traffic-management-apps.yml'
+      - '**/deploy-aca-revision-and-traffic-management-apps.yml'
 
   workflow_dispatch:
 
