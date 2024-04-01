@@ -1,0 +1,42 @@
+# This workflow provisions all the necessary resources for the demo application from aks-store-on-aca folder.
+name: deploy-aks-store-on-aca
+on:
+  #push:
+    #branches:
+    #  - 'main'
+    #paths:
+    #  - 'aks-store-on-aca/**'
+    #  - '**/deploy-aks-store-on-aca.yml'
+
+  workflow_dispatch:
+
+env:
+  AZURE_REGION: 'northeurope'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-apps-dev:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3        
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to dev
+        uses: azure/arm-deploy@v2
+        with:
+          scope: 'subscription'
+          deploymentName: ${{ github.run_number }}
+          subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          template: ${{ github.workspace }}/aks-store-on-aca/main.bicep
+          parameters: ${{ github.workspace }}/aks-store-on-aca/parameters/dev.bicepparam
+          region: ${{ env.AZURE_REGION }}

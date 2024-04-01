@@ -422,7 +422,7 @@ resource productservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
           env: [
             {
               name: 'AI_SERVICE_URL'
-              value: openAIEndpoint
+              value: 'https://${aiservice.properties.configuration.ingress.fqdn}'
             }
           ]
           probes: [

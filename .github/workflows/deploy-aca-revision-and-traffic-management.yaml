@@ -42,4 +42,3 @@ jobs:
           template: ${{ github.workspace }}/aca-revision-and-traffic-management/main.bicep
           parameters: ${{ github.workspace }}/aca-revision-and-traffic-management/parameters/dev.bicepparam
           region: ${{ env.AZURE_REGION }}
-
