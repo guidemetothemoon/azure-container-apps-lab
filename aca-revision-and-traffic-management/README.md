@@ -2,6 +2,12 @@
 
 This folder contains Bicep code for provisioning a demo application that can be used to see multiple revisions and traffic splitting for Azure Container Apps in action. Demo application itself is a simple Hello World application that was initially created by Microsoft for AKS demos, but why not re-use it for Azure Container Apps as well? 😼
 
+Implementation includes following modules:
+
+* [common](modules/common.bicep): includes common, shared resources that are used by other resources in the deployment. For example, managed identities or deployment-specific Azure Policy assignments.
+* [aca_common](modules/aca-common.bicep): includes resources that are common for Azure Container Apps, like Azure Container Apps environment.
+* [public_apps](modules/aca-public-apps.bicep): includes container apps that are publicly accessible.
+
 ## Deployment instructions
 
 1. Deploy code as-is first (after adjusting parameters as per your use case) - initially in [aca-public-apps.bicep](modules/aca-public-apps.bicep) it's defined that application will be deployed in multi-revision mode, but when we start from nothing only one, first, revision will be deployed. Due to that in ```*.bicepparam``` file traffic distribution is configured to send 100% traffic to the latest revision, which will be the app's very first revision.
