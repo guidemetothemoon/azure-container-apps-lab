@@ -8,6 +8,9 @@ param orderServiceUri string
 param productServiceUri string
 param tags object
 
+/* Due to hard-coded URLs and port numbers in the NGINX configuration in the original source code, instead of opening up additional unused ports in Azure Container Apps to support this
+ * NGINX configuration is overriden in a way that would work more natively for Azure Container Apps. NGINX configuration files for store-front and store-admin apps are stored in .conf files in the current folder.
+*/
 var storeFrontNginxConfReplacements = { 
   '{ORDER_SERVICE_URI}': orderServiceUri
   '{PRODUCT_SERVICE_URI}': productServiceUri
@@ -113,6 +116,7 @@ resource storefront 'Microsoft.App/containerApps@2023-05-02-preview' = {
       ]
       scale: {
         minReplicas: 1
+        maxReplicas: 3
       }
       volumes: [
         {
@@ -223,6 +227,7 @@ resource storeadmin 'Microsoft.App/containerApps@2023-05-02-preview' = {
       ]
       scale: {
         minReplicas: 1
+        maxReplicas: 3
       }
       volumes: [
         {

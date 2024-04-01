@@ -1,10 +1,10 @@
-param dnsZoneKeyVault string
+param keyVaultDnsZoneName string
 param location string
 param managedIdentityName string
 param subnetId string
 param tags object
-param tenantId string = subscription().tenantId
 
+var tenantId = subscription().tenantId
 
 resource keyVaultSecretsOfficerRoleDefinition 'Microsoft.Authorization/roleDefinitions@2018-01-01-preview' existing = {
   scope: subscription()
@@ -13,6 +13,10 @@ resource keyVaultSecretsOfficerRoleDefinition 'Microsoft.Authorization/roleDefin
 
 resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' existing = {
   name: managedIdentityName
+}
+
+resource keyVaultDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' existing = {
+  name: keyVaultDnsZoneName
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2021-10-01' = {
@@ -54,7 +58,7 @@ resource keyVaultroleAssignment 'Microsoft.Authorization/roleAssignments@2020-10
 
 resource privateEndpointKeyVault 'Microsoft.Network/privateEndpoints@2023-04-01' = {
   name: 'pe-${keyVault.name}'
-  location: location  
+  location: location
   properties: {
     customNetworkInterfaceName: '${keyVault.name}-nic-deluxe'
     privateLinkServiceConnections: [
@@ -83,7 +87,7 @@ resource keyVaultPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/private
       {
         name: 'config1'
         properties: {
-          privateDnsZoneId: dnsZoneKeyVault
+          privateDnsZoneId: keyVaultDnsZone.id
         }
       }
     ]

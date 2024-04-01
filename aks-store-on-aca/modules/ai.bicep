@@ -1,4 +1,4 @@
-param dnsZoneOpenAIId string
+param openAIDnsZoneName string
 param keyVaultName string
 param location string
 param managedIdentityId string
@@ -8,8 +8,12 @@ param tags object
 
 var cognitiveAccountName = 'coga-${uniqueString('cognitive', resourceGroup().id)}'
 
-resource keyVaultACAShared 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
+resource keyVaultACA 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
   name: keyVaultName
+}
+
+resource openAIDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' existing = {
+  name: openAIDnsZoneName
 }
 
 resource cognitiveAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
@@ -34,18 +38,18 @@ resource cognitiveAccount 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   tags: tags
 }
 
-resource cognitiveAccountDeploymentGpt432k 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
+resource cognitiveAccountDeploymentGpt35Turbo 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
   parent: cognitiveAccount
-  name: 'gpt-4-32k'
+  name: 'gpt-35-turbo'
   sku: {
     name: 'Standard'
-    capacity: 60
+    capacity: 240
   }
   properties: {
     model: {
       format: 'OpenAI'
-      name: 'gpt-4-32k'
-      version: '0613'
+      name: 'gpt-35-turbo'
+      version: '0301'
     }
   }
 }
@@ -81,7 +85,7 @@ resource cogaPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZ
       {
         name: 'config1'
         properties: {
-          privateDnsZoneId: dnsZoneOpenAIId
+          privateDnsZoneId: openAIDnsZone.id
         }
       }
     ]
@@ -89,7 +93,7 @@ resource cogaPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZ
 }
 
 resource openAIKeySecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVaultACAShared
+  parent: keyVaultACA
   name: 'cogaKey'
   properties: {
     value: cognitiveAccount.listKeys().key1
@@ -97,12 +101,11 @@ resource openAIKeySecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
 }
 
 resource cognitiveAccountEndpoint 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVaultACAShared
+  parent: keyVaultACA
   name: 'cogaEndpoint'
   properties: {
     value: cognitiveAccount.properties.endpoint
   }
 }
 
-output openAIEndpoint string = cognitiveAccountEndpoint.properties.secretUri
-output openAIKey string = openAIKeySecret.properties.secretUri
+output openAIDeploymentName string = cognitiveAccountDeploymentGpt35Turbo.name

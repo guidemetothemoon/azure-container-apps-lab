@@ -1,5 +1,7 @@
 param environmentId string
 param location string
+param managedIdentityId string
+param openAIDeploymentName string
 param subnetIpRange string
 param tags object
 
@@ -7,18 +9,26 @@ param tags object
 param openAIEndpoint string
 
 @secure()
+param openAIKey string
+
+@secure()
 param queueUsername string
 
 @secure()
 param queuePass string
 
+/* ConfigMap isn't supported in Azure Container Apps, but an alternative way is to mount a file containing the needed information to the RabbitMQ container app. */
 var rabbitmqPluginsConf = loadTextContent('rabbitmq_enabled_plugins')
-
-// MongoDB instance for persisted data
 
 resource mongodb 'Microsoft.App/containerApps@2023-05-02-preview' = {
   name: 'mongodb'
   location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentityId}' : {}
+    }
+  }
   properties: {
     managedEnvironmentId: environmentId
     configuration: {
@@ -59,6 +69,7 @@ resource mongodb 'Microsoft.App/containerApps@2023-05-02-preview' = {
       ]
       scale: {
         minReplicas: 1
+        maxReplicas: 3
       }
     }
   }  
@@ -68,6 +79,12 @@ resource mongodb 'Microsoft.App/containerApps@2023-05-02-preview' = {
 resource rabbitmq 'Microsoft.App/containerApps@2023-05-02-preview' = {
   name: 'rabbitmq'
   location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentityId}' : {}
+    }
+  }
   properties: {
     managedEnvironmentId: environmentId
     configuration: {
@@ -127,6 +144,7 @@ resource rabbitmq 'Microsoft.App/containerApps@2023-05-02-preview' = {
       ]
       scale: {
         minReplicas: 1
+        maxReplicas: 3
       }
       volumes: [
         {
@@ -148,6 +166,12 @@ resource rabbitmq 'Microsoft.App/containerApps@2023-05-02-preview' = {
 resource orderservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
   name: 'order-service'
   location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentityId}' : {}
+    }
+  }
   properties: {
     managedEnvironmentId: environmentId
     configuration: {
@@ -155,7 +179,7 @@ resource orderservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
         external: false
         targetPort: 3000
         transport: 'http'
-        allowInsecure: true
+        allowInsecure: true // required for this service due to limitations in the original application
         ipSecurityRestrictions: [
           {
             name: 'AllowSnet'
@@ -252,6 +276,7 @@ resource orderservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
       //]
       scale: {
         minReplicas: 1
+        maxReplicas: 3
       }
     }
   }  
@@ -261,6 +286,12 @@ resource orderservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
 resource makelineservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
   name: 'makeline-service'
   location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentityId}' : {}
+    }
+  }
   properties: {
     managedEnvironmentId: environmentId
     configuration: {
@@ -268,7 +299,7 @@ resource makelineservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
         external: false
         targetPort: 3001
         transport: 'http'
-        allowInsecure: true
+        allowInsecure: true // required for this service due to limitations in the original application
         ipSecurityRestrictions: [
           {
             name: 'AllowSnet'
@@ -344,6 +375,7 @@ resource makelineservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
       ]
       scale: {
         minReplicas: 1
+        maxReplicas: 3
       }
     }
   }  
@@ -353,6 +385,12 @@ resource makelineservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
 resource productservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
   name: 'product-service'
   location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentityId}' : {}
+    }
+  }
   properties: {
     managedEnvironmentId: environmentId
     configuration: {
@@ -414,6 +452,96 @@ resource productservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
       ]
       scale: {
         minReplicas: 1
+        maxReplicas: 3
+      }
+    }
+  }  
+  tags: tags
+}
+
+resource aiservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
+  name: 'ai-service'
+  location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentityId}' : {}
+    }
+  }
+  properties: {
+    managedEnvironmentId: environmentId
+    configuration: {
+      ingress: {
+        external: false
+        targetPort: 5001
+        transport: 'http'
+        allowInsecure: false
+        clientCertificateMode: 'accept'
+        ipSecurityRestrictions: [
+          {
+            name: 'AllowSnet'
+            description: 'Allow access from main subnet'
+            action: 'Allow'
+            ipAddressRange:  subnetIpRange
+          }
+        ]
+      }  
+    }
+    template: {
+      containers: [
+        {
+          image: 'ghcr.io/azure-samples/aks-store-demo/ai-service:latest'
+          name: 'product-service'
+          resources: {
+            cpu: json('0.25')
+            memory: '0.5Gi'
+          }
+          env: [
+            {
+              name: 'USE_AZURE_OPENAI'
+              value: 'true'
+            }
+            {
+              name: 'AZURE_OPENAI_DEPLOYMENT_NAME'
+              value: openAIDeploymentName
+            }
+            {
+              name: 'AZURE_OPENAI_ENDPOINT'
+              value: openAIEndpoint
+            }
+            {
+              name: 'OPENAI_API_KEY'
+              value: openAIKey
+            }
+          ]
+          probes: [
+            {
+              type: 'Liveness'
+              httpGet: {
+                path: '/health'
+                port: 5001
+              }
+              initialDelaySeconds: 3
+              periodSeconds: 3
+              failureThreshold: 5
+            }
+            {
+              type: 'Readiness'
+              httpGet: {
+                path: '/health'
+                port: 5001
+              }
+              initialDelaySeconds: 3
+              periodSeconds: 5
+              failureThreshold: 3
+            }
+          ]
+          
+        }
+      ]
+      scale: {
+        minReplicas: 1
+        maxReplicas: 3
       }
     }
   }  
@@ -423,6 +551,12 @@ resource productservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
 resource virtualcustomer 'Microsoft.App/containerApps@2023-05-02-preview' = {
   name: 'virtual-customer'
   location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentityId}' : {}
+    }
+  }
   properties: {
     managedEnvironmentId: environmentId
     template: {
@@ -448,6 +582,7 @@ resource virtualcustomer 'Microsoft.App/containerApps@2023-05-02-preview' = {
       ]
       scale: {
         minReplicas: 1
+        maxReplicas: 3
       }
     }
   }  
@@ -457,6 +592,12 @@ resource virtualcustomer 'Microsoft.App/containerApps@2023-05-02-preview' = {
 resource virtualworker 'Microsoft.App/containerApps@2023-05-02-preview' = {
   name: 'virtual-worker'
   location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentityId}' : {}
+    }
+  }
   properties: {
     managedEnvironmentId: environmentId
     template: {
@@ -482,6 +623,7 @@ resource virtualworker 'Microsoft.App/containerApps@2023-05-02-preview' = {
       ]
       scale: {
         minReplicas: 1
+        maxReplicas: 3
       }
     }
   }  

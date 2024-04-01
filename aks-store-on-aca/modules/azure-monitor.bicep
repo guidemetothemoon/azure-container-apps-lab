@@ -1,51 +1,98 @@
+param amplsPrivateDnsZones array
 param environment string
 param keyVaultName string
 param location string
+param locationPrefix string
+param managedIdentityId string
+param subnetId string
 param tags object
 
-resource keyVaultACAShared 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
+
+var privateDnsZoneConfigs = [ for zone in amplsPrivateDnsZones : {
+  name: replace(zone, '.', '-')
+  properties: {
+    privateDnsZoneId:  resourceId('Microsoft.Network/privateDnsZones', zone)
+  }
+}]
+
+resource keyVaultACA 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
   name: keyVaultName
+}
+
+resource ampls 'microsoft.insights/privateLinkScopes@2021-07-01-preview' = {
+  name: 'ampls-${locationPrefix}-${environment}'
+  location: 'global'
+  tags: tags
+  properties: {
+    accessModeSettings: {
+      ingestionAccessMode: 'PrivateOnly'
+      queryAccessMode: 'Open'
+    }
+  }
 }
 
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: 'log-aca-${environment}'
   location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentityId}' : {}
+    }
+  }
   properties: {
     retentionInDays: 30
     sku: { 
       name: 'PerGB2018' 
     }
+    publicNetworkAccessForIngestion: 'Disabled'
+    publicNetworkAccessForQuery: 'Enabled'
   }
   tags: tags
 }
 
-resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
-  name: 'appi-aca-${environment}'
+resource logAnalyticsAMPLSConnection 'Microsoft.Insights/privateLinkScopes/scopedResources@2021-07-01-preview' = {
+  name: 'ampls-${logAnalytics.name}'
+  parent: ampls
+  properties: {
+    linkedResourceId: logAnalytics.id
+  }
+}
+
+resource privateEndpointAMPLS 'Microsoft.Network/privateEndpoints@2023-04-01' = {
+  name: 'pe-${ampls.name}'
   location: location
-  kind: 'web'
   properties: {
-    Application_Type: 'web'
-    IngestionMode: 'LogAnalytics'
-    RetentionInDays: 30
-    WorkspaceResourceId: logAnalytics.id    
+    customNetworkInterfaceName: '${ampls.name}-nic-deluxe'
+    privateLinkServiceConnections: [
+      {
+        name: 'psc-${ampls.name}'
+        properties: {
+          privateLinkServiceId: ampls.id
+          groupIds: [
+            'azuremonitor'
+          ]
+        }
+      }
+    ]
+    subnet: {
+      id: subnetId
+    }
   }
+  dependsOn: [logAnalyticsAMPLSConnection]
   tags: tags
 }
 
-resource appInsightsConnStringSecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVaultACAShared
-  name: '${appInsights.name}-connection-string'
+resource amplsPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-04-01' = {
+  name: 'default'
+  parent: privateEndpointAMPLS
   properties: {
-    attributes: {
-      enabled: true
-    }
-    value: appInsights.properties.ConnectionString
+    privateDnsZoneConfigs: privateDnsZoneConfigs
   }
-  tags: tags
 }
 
 resource logAnalyticsKeySecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVaultACAShared
+  parent: keyVaultACA
   name: '${logAnalytics.name}-key'
   properties: {
     attributes: {
@@ -58,7 +105,7 @@ resource logAnalyticsKeySecret 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = 
 
 resource kvDiagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: keyVaultName
-  scope: keyVaultACAShared  
+  scope: keyVaultACA
   properties: {
     workspaceId: logAnalytics.id
     logs: [
@@ -70,7 +117,6 @@ resource kvDiagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-
   }
 }
 
-output appInsightsConnectionString string = appInsightsConnStringSecret.name
 output logAnalyticsWorkspaceId string = logAnalytics.id
 output logAnalyticsCustomerId string = logAnalytics.properties.customerId
 output logAnalyticsKey string = logAnalyticsKeySecret.name

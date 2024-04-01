@@ -6,12 +6,7 @@ param subnetId string
 param tags object
 
 @secure()
-param appInsightsConnectionString string
-
-@secure()
 param logAnalyticsKey string
-
-
 
 resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-11-02-preview' = {
   name: 'cae-aca-store'
@@ -21,11 +16,8 @@ resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-11-02-
     userAssignedIdentities: {
       '${managedIdentityId}' : {}
     }
-  }  
+  }
   properties: {
-    appInsightsConfiguration: {
-      connectionString: appInsightsConnectionString
-    }
     appLogsConfiguration: {
       destination: 'log-analytics'
       logAnalyticsConfiguration: {
@@ -39,7 +31,6 @@ resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-11-02-
   }
   tags: tags
 }
-
 
 resource containerAppsInboundNsgRule 'Microsoft.Network/networkSecurityGroups/securityRules@2023-05-01' = {  
   name: '${nsgName}/AllowInternet443FrontendInbound'  

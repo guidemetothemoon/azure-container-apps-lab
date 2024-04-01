@@ -39,7 +39,7 @@ resource helloworld 'Microsoft.App/containerApps@2023-05-02-preview' = {
           env: [
             {
               name: 'TITLE'
-              value: 'Hello World from Azure Container Apps (ACA) - V2!'
+              value: 'Hello World from Azure Container Apps (ACA)!'
             }
           ]
           probes: [

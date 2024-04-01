@@ -1,6 +1,3 @@
-param dnsZoneNameFile string
-param dnsZoneNameKeyVault string
-param dnsZoneNameOpenAI string
 param environment string
 param location string
 param locationPrefix string
@@ -130,69 +127,7 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {
   tags: tags
 }
 
-resource privateDnsZoneOpenAI 'Microsoft.Network/privateDnsZones@2020-06-01' = {
-  name: dnsZoneNameOpenAI
-  location: 'global'
-  properties: {}
-  tags: tags
-}
-
-resource privateDnsZoneFile 'Microsoft.Network/privateDnsZones@2020-06-01' = {
-  name: dnsZoneNameFile
-  location: 'global'
-  properties: {}
-  tags: tags
-}
-
-resource privateDnsZoneKeyVault 'Microsoft.Network/privateDnsZones@2020-06-01' = {
-  name: dnsZoneNameKeyVault
-  location: 'global'
-  properties: {}
-  tags: tags
-}
-
-resource privateDnsZoneLinkOpenAI 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
-  name: '${privateDnsZoneOpenAI.name}-link'
-  parent: privateDnsZoneOpenAI
-  location: 'global'
-  properties: {
-    registrationEnabled: false
-    virtualNetwork: {
-      id: vnet.id
-    }
-  }
-  tags: tags
-}
-
-resource privateDnsZoneLinkFile 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
-  name: '${privateDnsZoneFile.name}-link'
-  parent: privateDnsZoneFile
-  location: 'global'
-  properties: {
-    registrationEnabled: false
-    virtualNetwork: {
-      id: vnet.id
-    }
-  }
-  tags: tags
-}
-
-resource privateDnsZoneLinkKeyVault 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
-  name: '${privateDnsZoneKeyVault.name}-link'
-  parent: privateDnsZoneKeyVault
-  location: 'global'
-  properties: {
-    registrationEnabled: false
-    virtualNetwork: {
-      id: vnet.id
-    }
-  }
-  tags: tags
-}
-
 output acaSubnetId string = vnet.properties.subnets[0].id
 output acaSubnetIpRange string = vnet.properties.subnets[0].properties.addressPrefix
-output dnsZoneOpenAIId string = privateDnsZoneOpenAI.id
-output dnsZoneFileId string = privateDnsZoneFile.id
-output dnsZoneKeyVaultId string = privateDnsZoneKeyVault.id
 output nsgName string = nsg.name
+output vnetId string = vnet.id
