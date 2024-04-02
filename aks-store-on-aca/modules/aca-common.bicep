@@ -28,6 +28,7 @@ resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-11-02-
     vnetConfiguration: {
       infrastructureSubnetId: subnetId
     }
+    zoneRedundant: true
   }
   tags: tags
 }

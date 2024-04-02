@@ -31,12 +31,25 @@ module common 'modules/common.bicep' = {
   }
 }
 
+@description('Module that provisions Azure Monitor resources, like Log Analytics workspace and Application Insights.')
+module azure_monitor 'modules/azure-monitor.bicep' = {
+  name: 'azure-monitor'
+  scope: rg
+  params: {
+    environment: environment
+    location: location
+    managedIdentityId: common.outputs.managedIdentityId
+    tags: tags
+  }
+}
+
 @description('Module that provisions common overall resources for Azure Container Apps, like Azure Container Apps environment.')
 module aca_common 'modules/aca-common.bicep' = {
   name: 'aca-common'
   scope: rg
   params: {
     location: location
+    logAnalyticsWorkspaceId: azure_monitor.outputs.logAnalyticsWorkspaceId
     managedIdentityId: common.outputs.managedIdentityId
     tags: tags
   }

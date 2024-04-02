@@ -5,6 +5,7 @@ This folder contains Bicep code for provisioning a demo application that can be 
 Implementation includes following modules:
 
 * [common](modules/common.bicep): includes common, shared resources that are used by other resources in the deployment. For example, managed identities or deployment-specific Azure Policy assignments.
+* [azure_monitor](modules/azure-monitor.bicep): includes observability-related resources, like Log Analytics, Application Insights, etc.
 * [aca_common](modules/aca-common.bicep): includes resources that are common for Azure Container Apps, like Azure Container Apps environment.
 * [public_apps](modules/aca-public-apps.bicep): includes container apps that are publicly accessible.
 
