@@ -15,3 +15,13 @@ Repository is improved continuously and currently includes four use cases that c
 All use cases are implemented with infrastructure-as-code with Bicep and are directly deployable. Deployment parameters can be adjusted as per your need and are located in Bicep parameter files in ```parameters``` folder in every use case's root folder.
 
 If you would like to test out resource provisioning with CI/CD, and example of provisioning ```aca-revision-and-traffic-management``` scenario with GitHub Actions workflow, template code is available in [.github/workflows](.github/workflows/deploy-aca-revision-and-traffic-management.yaml) folder at the root of this repo.
+
+## Additional reading material
+
+Following links can be very useful to continue your journey in learning about Azure Container Apps:
+
+* [Microsoft's documentation on Azure Container Apps](https://learn.microsoft.com/en-us/azure/container-apps)
+* [GitHub repository for Azure Container Apps issues and roadmap](https://github.com/microsoft/azure-container-apps​)
+* [Azure Container Apps Roadmap](https://github.com/orgs/microsoft/projects/540)
+* [How to analyze Azure Container Apps cost](https://github.com/microsoft/azure-container-apps/wiki/Analyze-your-ACA-Bill​)
+* [Azure landing zone accelerator for Azure Container Apps](https://techcommunity.microsoft.com/t5/apps-on-azure-blog/announcing-landing-zone-accelerator-for-azure-container-apps​)
