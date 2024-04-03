@@ -178,8 +178,8 @@ module internal_apps 'modules/aca-internal-apps.bicep' = {
     location: location
     managedIdentityId: common.outputs.managedIdentityId  
     openAIDeploymentName: ai.outputs.openAIDeploymentName
-    openAIEndpoint: keyVaultACA.getSecret('cogaEndpoint')
-    openAIKey: keyVaultACA.getSecret('cogaKey')
+    openAIEndpointSecretUri: ai.outputs.openAIEndpointSecretUri
+    openAIKeySecretUri: ai.outputs.openAIKeySecretUri
     queueUsername: keyVaultCommon.getSecret('queue-username')
     queuePass: keyVaultCommon.getSecret('queue-password')
     subnetIpRange: network.outputs.acaSubnetIpRange
@@ -198,6 +198,9 @@ module public_apps 'modules/aca-public-apps.bicep' = {
     managedIdentityId: common.outputs.managedIdentityId
     orderServiceUri: internal_apps.outputs.orderServiceUri
     productServiceUri: internal_apps.outputs.productServiceUri
+    storeAdminAuthClientId: keyVaultCommon.getSecret('store-admin-auth-client-id')
+    storeAdminAuthClientSecret: keyVaultCommon.getSecret('store-admin-auth-client-secret')
+    storeAdminAuthTenantId: keyVaultCommon.getSecret('store-admin-auth-tenant-id')
     tags: tags
   }
 }

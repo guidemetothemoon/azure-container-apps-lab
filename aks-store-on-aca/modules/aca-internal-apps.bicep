@@ -2,14 +2,10 @@ param environmentId string
 param location string
 param managedIdentityId string
 param openAIDeploymentName string
+param openAIEndpointSecretUri string
+param openAIKeySecretUri string
 param subnetIpRange string
 param tags object
-
-@secure()
-param openAIEndpoint string
-
-@secure()
-param openAIKey string
 
 @secure()
 param queueUsername string
@@ -485,7 +481,19 @@ resource aiservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
             ipAddressRange:  subnetIpRange
           }
         ]
-      }  
+      }
+      secrets: [
+        {
+          name: 'openai-key-uri'
+          keyVaultUrl: openAIKeySecretUri
+          identity: managedIdentityId
+        }
+        {
+          name: 'openai-endpoint-uri'
+          keyVaultUrl: openAIEndpointSecretUri
+          identity: managedIdentityId
+        }
+      ]
     }
     template: {
       containers: [
@@ -507,11 +515,11 @@ resource aiservice 'Microsoft.App/containerApps@2023-05-02-preview' = {
             }
             {
               name: 'AZURE_OPENAI_ENDPOINT'
-              value: openAIEndpoint
+              secretRef: 'openai-endpoint-uri'
             }
             {
               name: 'OPENAI_API_KEY'
-              value: openAIKey
+              secretRef: 'openai-key-uri'
             }
           ]
           probes: [

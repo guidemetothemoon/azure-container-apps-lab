@@ -8,6 +8,15 @@ param orderServiceUri string
 param productServiceUri string
 param tags object
 
+@secure()
+param storeAdminAuthClientId string
+
+@secure()
+param storeAdminAuthClientSecret string
+
+@secure()
+param storeAdminAuthTenantId string
+
 /* Due to hard-coded URLs and port numbers in the NGINX configuration in the original source code, instead of opening up additional unused ports in Azure Container Apps to support this
  * NGINX configuration is overriden in a way that would work more natively for Azure Container Apps. NGINX configuration files for store-front and store-admin apps are stored in .conf files in the current folder.
 */
@@ -158,6 +167,10 @@ resource storeadmin 'Microsoft.App/containerApps@2023-05-02-preview' = {
           name: 'nginx-conf'
           value: storeAdminNginxConf
         }
+        {
+          name: 'microsoft-provider-authentication-secret'
+          value: storeAdminAuthClientSecret
+        }
       ]
     }
     template: {
@@ -244,6 +257,39 @@ resource storeadmin 'Microsoft.App/containerApps@2023-05-02-preview' = {
     }
   }
   tags: tags
+}
+
+@description('This resource enables authentication for the Store Admin application using Microsoft Entra ID as the identity provider and information about existing application registration.')
+resource storeAdminAuthConfig 'Microsoft.App/containerApps/authConfigs@2023-11-02-preview' = {
+  name: 'current' // required name
+  parent: storeadmin  
+  properties: {
+    globalValidation: {
+      redirectToProvider: 'azureactivedirectory'
+      unauthenticatedClientAction: 'RedirectToLoginPage'
+    }
+    httpSettings: {
+      requireHttps: true
+    }
+    identityProviders: {
+      azureActiveDirectory: {
+        enabled: true
+        registration: {
+          clientId: storeAdminAuthClientId
+          clientSecretSettingName: 'microsoft-provider-authentication-secret'
+          openIdIssuer: 'https://sts.windows.net/${storeAdminAuthTenantId}/v2.0'
+        }
+        validation: {
+          allowedAudiences: [
+            'api://${storeAdminAuthClientId}'
+          ]
+        }
+      }
+    }
+    platform: {
+      enabled: true
+    }
+  }
 }
 
 output storeFrontUri string = 'https://${storefront.properties.configuration.ingress.fqdn}'

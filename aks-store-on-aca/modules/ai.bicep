@@ -109,3 +109,5 @@ resource cognitiveAccountEndpoint 'Microsoft.KeyVault/vaults/secrets@2022-07-01'
 }
 
 output openAIDeploymentName string = cognitiveAccountDeploymentGpt35Turbo.name
+output openAIKeySecretUri string = openAIKeySecret.properties.secretUri
+output openAIEndpointSecretUri string = cognitiveAccountEndpoint.properties.secretUri

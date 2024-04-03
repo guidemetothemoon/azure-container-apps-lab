@@ -35,6 +35,12 @@ resource acaEnvironmentDiagnosticSettings 'Microsoft.Insights/diagnosticSettings
         enabled: true
       }
     ]
+    metrics: [
+      {
+        category: 'AllMetrics'
+        enabled: true
+      }
+    ]
   }
 }
 
