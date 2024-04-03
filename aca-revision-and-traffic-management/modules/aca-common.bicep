@@ -4,7 +4,7 @@ param managedIdentityId string
 param tags object
 
 resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-11-02-preview' = {
-  name: 'cae-aca-helloworld'
+  name: 'cae-aca-hello-world'
   location: location
   identity: {
     type: 'UserAssigned'

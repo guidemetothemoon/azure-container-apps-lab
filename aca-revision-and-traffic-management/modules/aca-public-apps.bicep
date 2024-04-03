@@ -5,7 +5,7 @@ param tags object
 param trafficDistribution array
 
 resource helloworld 'Microsoft.App/containerApps@2023-05-02-preview' = {
-  name: 'aca-helloworld'
+  name: 'aca-hello-world'
   location: location
   tags: tags
   identity: {
@@ -31,7 +31,7 @@ resource helloworld 'Microsoft.App/containerApps@2023-05-02-preview' = {
       containers: [
         {
           image: 'mcr.microsoft.com/azuredocs/aks-helloworld:v1'
-          name: 'aca-helloworld'
+          name: 'aca-hello-world'
           resources: {
             cpu: json('0.5')
             memory: '1.0Gi'
