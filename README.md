@@ -25,3 +25,4 @@ Following links can be very useful to continue your journey in learning about Az
 * [Azure Container Apps Roadmap](https://github.com/orgs/microsoft/projects/540)
 * [How to analyze Azure Container Apps cost](https://github.com/microsoft/azure-container-apps/wiki/Analyze-your-ACA-Bill​)
 * [Azure landing zone accelerator for Azure Container Apps](https://techcommunity.microsoft.com/t5/apps-on-azure-blog/announcing-landing-zone-accelerator-for-azure-container-apps​)
+* [Path and hostname-based routing in Azure Container Apps with NGINX](https://techcommunity.microsoft.com/t5/apps-on-azure-blog/path-and-hostname-based-routing-in-azure-container-apps-with/ba-p/4068923)
