@@ -1,6 +1,8 @@
 # Azure Container Apps - Demos and useful resources
 
-This repository contains the source code for different use cases of implementation of Azure Container Apps. Some of these use cases are used for demos in **"From zero to production with Azure Container Apps"** technical session presented by Kristina Devochko. Long-term plan is to include additional useful resources in this repo, like links to blog posts and other helpful content related to all things Azure Container Apps.
+This repository contains the source code for different use cases of implementation of Azure Container Apps. Some of these use cases are used for demos in [From Day Zero to Production with Azure Container Apps](https://www.youtube.com/live/yAtMgufv7Aw?si=vtQ6ziOYhasNKuyr) technical session presented by Kristina Devochko. Long-term plan is to include additional useful resources in this repo, like links to blog posts and other helpful content related to all things Azure Container Apps.
+
+If there are scenarios that are not available in this repository that you would like to see an example implementation of, you can request it by submitting an [issue](https://github.com/guidemetothemoon/azure-container-apps-lab/issues/new), and I will do my best to make it happen😊
 
 Repository is improved continuously and currently includes four use cases that can be found in the respective folders:
 
